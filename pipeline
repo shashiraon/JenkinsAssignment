@@ -1,0 +1,46 @@
+node {
+   stage('CheckOut') { // for display purposes
+      git branch: 'Development', credentialsId:'fb8fa2b7-5e1c-4e9f-8ebd-fea3c53778c9', url: 'https://conduent-ghs-02.visualstudio.com/GHS_FSS/_git/GHS_FSS'
+   }
+    //sonar:sonar needed for SonarQube in the mvn sh command
+    stage('Build') {
+      // Run the maven build
+      withEnv(["JAVA_HOME=${ tool 'JAVA_HOME' }", "PATH+MAVEN=${tool 'MAVEN_HOME'}/bin:${env.JAVA_HOME}/bin"]) {
+            //withSonarQubeEnv('SonarURL') {
+                 //sh 'mvn  -f FSS_JAVA_DEV/FSSEnterprise/pom.xml clean install'
+                 //sh 'mvn  -f FSS_JAVA_DEV/FSSStoredProc/pom.xml clean install'
+                 sh 'mvn  -f CMDS_ESB_DEV/CMDSIntegration/ClaimsIntegration/pom.xml clean install'
+           //}
+      }
+   }
+   // stage("Quality Gate") {
+       //timeout(time: 1, unit: 'HOURS')  { // Just in case something goes wrong, pipeline will be killed after a timeout
+           //def qg = waitForQualityGate() // Reuse taskId previously collected by withSonarQubeEnv
+          // if (qg.status != 'OK') {
+            //  error "Pipeline aborted due to quality gate failure: ${qg.status}"
+         //}
+      //}
+   //}
+
+       // Build and Deploy to ACR 'stage'...
+    stage('Image Build & ACR Push')          {
+            app = docker.build("ghsfssazecontreg.azurecr.io/cmdsfinance/financeclaimsintegrationdev", "-f ./CMDS_ESB_DEV/CMDSIntegration/ClaimsIntegration/DockerfileJenkins .")
+                 withDockerRegistry([credentialsId: 'AKS_FSS_Credentials', url: 'https://ghsfssazecontreg.azurecr.io']) {
+                  app.push('0.0.1-SNAPSHOT')
+                 }
+            //}
+    }
+     // push to AKS...
+   stage('Push to AKS')          {
+   withCredentials([azureServicePrincipal(credentialsId: 'b3e8ed4e-e1be-4ba0-9990-3d5fb3fe5b7d',
+                                    subscriptionIdVariable: 'a9d228ac-7134--a188-61f5c2b4dbc3',
+                                    clientIdVariable: '6e2de089-f741-4632--3c26c78f714c',
+                                    clientSecretVariable: 'Ra45iXmvmqz1xSk.a?5Nc?-SsUG',
+                                    tenantIdVariable: 'e58a3c7f-facd-416b-9cf2-a0ce90a7debb')]) {
+   sh "az login --service-principal -u 6e2de089-f741-4632-a818-3c26c78f714c -p 'Ra45iXmvmDsh_Kqz1xSk.a?5Nc?-SsUG' -t e58a3c7f-facd-416b-9cf2-a0ce90a7debb"
+
+   sh 'kubectl --kubeconfig=/tmp/config1 apply -f /app/jenkins/workspace/CMdS_Finance_ClaimsIntegration_Dev/CMDS_ESB_DEV/CMDSIntegration/ClaimsIntegration/Deployment_dev.yaml -v=8'
+
+                                    }
+  }
+}
