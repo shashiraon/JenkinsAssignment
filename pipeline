@@ -9,7 +9,7 @@ node {
             //withSonarQubeEnv('SonarURL') {
                  //sh 'mvn  -f JAVA_DEV/Enterprise/pom.xml clean install'
                  //sh 'mvn  -f /pom.xml clean install'
-                 sh 'mvn  -f CMDS_ESB_DEV/CMDSIntegration/ClaimsIntegration/pom.xml clean install'
+                 sh 'mvn  -f ESB_DEV/Integration/Integration/pom.xml clean install'
            //}
       }
    }
@@ -24,7 +24,7 @@ node {
 
        // Build and Deploy to ACR 'stage'...
     stage('Image Build & ACR Push')          {
-            app = docker.build("fssazecontreg.azurecr.io/", "-f ./DockerfileJenkins .")
+            app = docker.build("azecontreg.azurecr.io/", "-f ./DockerfileJenkins .")
                  withDockerRegistry([credentialsId: 'AKS_FSS_Credentials', url: 'https://ghsfssazecontreg.azurecr.io']) {
                   app.push('0.0.1-SNAPSHOT')
                  }
