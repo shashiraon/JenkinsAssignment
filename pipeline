@@ -1,14 +1,14 @@
 node {
    stage('CheckOut') { // for display purposes
-      git branch: 'Development', credentialsId:'fb8fa2b7-5e1c-4e9f-8ebd-fea3c53778c9', url: 'https://conduent-ghs-02.visualstudio.com/GHS_FSS/_git/GHS_FSS'
+      git branch: 'Development', credentialsId:'f', url: 'https://.visualstudio.com/'
    }
     //sonar:sonar needed for SonarQube in the mvn sh command
     stage('Build') {
       // Run the maven build
       withEnv(["JAVA_HOME=${ tool 'JAVA_HOME' }", "PATH+MAVEN=${tool 'MAVEN_HOME'}/bin:${env.JAVA_HOME}/bin"]) {
             //withSonarQubeEnv('SonarURL') {
-                 //sh 'mvn  -f FSS_JAVA_DEV/FSSEnterprise/pom.xml clean install'
-                 //sh 'mvn  -f FSS_JAVA_DEV/FSSStoredProc/pom.xml clean install'
+                 //sh 'mvn  -f JAVA_DEV/Enterprise/pom.xml clean install'
+                 //sh 'mvn  -f /pom.xml clean install'
                  sh 'mvn  -f CMDS_ESB_DEV/CMDSIntegration/ClaimsIntegration/pom.xml clean install'
            //}
       }
@@ -24,7 +24,7 @@ node {
 
        // Build and Deploy to ACR 'stage'...
     stage('Image Build & ACR Push')          {
-            app = docker.build("ghsfssazecontreg.azurecr.io/cmdsfinance/financeclaimsintegrationdev", "-f ./CMDS_ESB_DEV/CMDSIntegration/ClaimsIntegration/DockerfileJenkins .")
+            app = docker.build("fssazecontreg.azurecr.io/", "-f ./DockerfileJenkins .")
                  withDockerRegistry([credentialsId: 'AKS_FSS_Credentials', url: 'https://ghsfssazecontreg.azurecr.io']) {
                   app.push('0.0.1-SNAPSHOT')
                  }
@@ -32,14 +32,14 @@ node {
     }
      // push to AKS...
    stage('Push to AKS')          {
-   withCredentials([azureServicePrincipal(credentialsId: 'b3e8ed4e-e1be-4ba0-9990-3d5fb3fe5b7d',
-                                    subscriptionIdVariable: 'a9d228ac-7134--a188-61f5c2b4dbc3',
-                                    clientIdVariable: '6e2de089-f741-4632--3c26c78f714c',
-                                    clientSecretVariable: 'Ra45iXmvmqz1xSk.a?5Nc?-SsUG',
-                                    tenantIdVariable: 'e58a3c7f-facd-416b-9cf2-a0ce90a7debb')]) {
-   sh "az login --service-principal -u 6e2de089-f741-4632-a818-3c26c78f714c -p 'Ra45iXmvmDsh_Kqz1xSk.a?5Nc?-SsUG' -t e58a3c7f-facd-416b-9cf2-a0ce90a7debb"
+   withCredentials([azureServicePrincipal(credentialsId: 'b3e8ed',
+                                    subscriptionIdVariable: 'a9d228ac',
+                                    clientIdVariable: '6e2de089-',
+                                    clientSecretVariable: 'Ra45iXmv',
+                                    tenantIdVariable: 'e58a3c7f')]) {
+   sh "az login --service-principal -u 6e2de089-4c -p 'Ra45iXmvmDs' -t e58a3c7f-b"
 
-   sh 'kubectl --kubeconfig=/tmp/config1 apply -f /app/jenkins/workspace/CMdS_Finance_ClaimsIntegration_Dev/CMDS_ESB_DEV/CMDSIntegration/ClaimsIntegration/Deployment_dev.yaml -v=8'
+   sh 'kubectl --kubeconfig=/tmp/config1 apply -f /app/jenkins/workspace/Integration_Dev/Deployment_dev.yaml -v=8'
 
                                     }
   }
